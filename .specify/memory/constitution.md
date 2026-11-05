@@ -1,50 +1,112 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# ApplyTrack Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. API-First, Contract-Driven
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+The HTTP API is the product; the web dashboard is one client of it.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+- Every endpoint MUST declare request and response schemas (Zod) that are the single source of
+  truth for runtime validation, TypeScript types, and the published OpenAPI document.
+- The OpenAPI document MUST be generated from code and served at `/docs`; hand-written,
+  drifting API docs are not permitted.
+- Errors MUST use one consistent shape (RFC 9457 `application/problem+json`) with a stable,
+  machine-readable `code`.
+- Breaking changes to a published route MUST go behind a new version prefix (`/v2`), never
+  silently change `/v1`.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+Rationale: a contract that is enforced at runtime cannot drift from its documentation, and
+consumers (including our own frontend) can rely on it.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### II. Test-First Discipline (NON-NEGOTIABLE)
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+- Each user story MUST have automated tests that exercise it end-to-end through the HTTP layer
+  before it is considered done.
+- Integration tests MUST run against a real PostgreSQL instance, not mocks of the database.
+- Pure domain logic (status transitions, statistics, reminder scheduling) MUST have unit tests.
+- External services (the LLM provider) MUST be faked behind an interface in tests; tests MUST
+  NOT make network calls to third parties.
+- The `main` branch MUST stay green: lint, type-check, and all tests pass in CI.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+Rationale: tests against the real database catch the bugs that matter in a data-centric API
+(constraints, transactions, query correctness) and make refactoring safe.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### III. Secure by Default
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Passwords MUST be hashed with a memory-hard algorithm (argon2id); plaintext or reversible
+  storage is forbidden.
+- Every query on user-owned data MUST be scoped by the authenticated user's id at the repository
+  layer; a request for another user's resource returns `404`, never the resource.
+- All input MUST be validated at the boundary; unknown fields are rejected.
+- Authentication and AI endpoints MUST be rate-limited.
+- Secrets MUST come from environment variables only and MUST NOT be committed, logged, or
+  returned in responses. Logs MUST NOT contain passwords, tokens, or full resume text.
+
+Rationale: a job tracker holds personal career data; leaking it across accounts is the most
+serious failure this system can have.
+
+### IV. Layered Simplicity
+
+- Code is organised as routes → services → repositories. Route handlers translate HTTP only;
+  business rules live in services; SQL lives in repositories.
+- New dependencies, abstractions, or infrastructure (queues, caches, extra services) MUST be
+  justified by a current requirement, not a hypothetical one (YAGNI).
+- Prefer a single deployable API process plus PostgreSQL; background work runs in-process until
+  load proves otherwise.
+
+Rationale: a small, legible codebase is easier to review, explain, and extend.
+
+### V. Observable and Operable
+
+- Logs MUST be structured JSON (pino) and carry a per-request id.
+- The service MUST expose `GET /health` (liveness) and `GET /ready` (checks the database).
+- Configuration MUST follow twelve-factor rules: read from the environment, validated at
+  startup, failing fast with a clear message when invalid.
+- The process MUST shut down gracefully on `SIGTERM` (stop accepting requests, drain, close the
+  pool).
+- Database schema changes MUST ship as versioned, committed migrations.
+
+Rationale: a service that can be diagnosed and deployed safely is what distinguishes production
+work from a demo.
+
+### VI. Optional Integrations Degrade Gracefully
+
+- Third-party integrations (the Claude API) MUST be optional: the application MUST start and
+  all core features MUST work when the integration is not configured.
+- Calls to third parties MUST have timeouts, bounded input size, and per-user rate/usage limits.
+- When an integration is unavailable, the API MUST respond with a clear, documented error
+  (`503` with a problem `code`), never a crash or a hang.
+
+Rationale: core functionality must never depend on a paid or flaky external service.
+
+## Technology and Platform Constraints
+
+- Language: TypeScript (strict mode) on Node.js 22 LTS or newer, ES modules.
+- API: Fastify with Zod type provider; OpenAPI via `@fastify/swagger`.
+- Data: PostgreSQL 16+ accessed through Drizzle ORM; migrations via drizzle-kit.
+- Frontend: React + Vite + TypeScript, consuming only the public API.
+- Testing: Vitest for unit and integration tests; Supertest-style injection via Fastify `inject`.
+- Packaging: npm workspaces monorepo (`apps/api`, `apps/web`); the API ships as a Docker image.
+- Hosting target: Render (API + static site) with Neon PostgreSQL; nothing may assume a
+  persistent local filesystem.
+
+## Development Workflow and Quality Gates
+
+- Work follows Spec Kit: specify → plan → tasks → implement. Specs live in `specs/`.
+- Every change passes `npm run lint`, `npm run typecheck`, and `npm test` locally and in GitHub
+  Actions before merging to `main`.
+- Commits are small and descriptive (Conventional Commits style: `feat:`, `fix:`, `docs:` ...).
+- The README MUST stay accurate: setup, environment variables, architecture, and how to run
+  tests.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes ad-hoc preferences. Plans produced by `/speckit-plan` MUST include a
+Constitution Check, and any deviation MUST be recorded with its justification in the plan's
+Complexity Tracking table.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Amendments are made by editing this file through `/speckit-constitution`, with the version bumped
+by semantic versioning: MAJOR for removing or redefining a principle, MINOR for adding a principle
+or materially expanding guidance, PATCH for clarifications.
+
+**Version**: 1.0.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
