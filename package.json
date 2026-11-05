@@ -21,7 +21,9 @@
     "test": "npm run test -w apps/api",
     "db:generate": "npm run db:generate -w apps/api",
     "db:migrate": "npm run db:migrate -w apps/api",
-    "openapi": "npm run openapi -w apps/api && npm run openapi:types -w apps/web"
+    "openapi": "npm run openapi -w apps/api && npm run openapi:types -w apps/web",
+    "db:migrate:neon": "npm run db:migrate:neon -w apps/api",
+    "start:neon": "npm run start:neon -w apps/api"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -32,5 +34,9 @@
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1"
+  },
+  "dependencies": {
+    "@neon/config": "^1.11.3",
+    "@neon/env": "^1.6.15"
   }
 }

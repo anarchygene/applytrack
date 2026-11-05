@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
-    "openapi": "tsx scripts/export-openapi.ts"
+    "openapi": "tsx scripts/export-openapi.ts",
+    "db:migrate:neon": "tsx --env-file-if-exists=.env --env-file=../../.env.local scripts/migrate.ts",
+    "start:neon": "node --env-file-if-exists=.env --env-file=../../.env.local dist/src/server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.5.0",

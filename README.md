@@ -28,7 +28,7 @@ data model, API contract and task list are all in [`specs/`](specs/001-job-track
 | **Data & SQL** | PostgreSQL with Drizzle ORM, versioned migrations, check constraints and composite indexes. Statistics use one CTE with `GROUP BY ROLLUP` for overall plus per-source funnels, and `generate_series` for zero-filled weekly counts. |
 | **Domain logic** | Stage-transition rules, applied-date stamping in the user's time zone, and transactional stage changes that write the timeline event, update the application and create the automatic follow-up atomically. |
 | **Optional AI** | Claude structured outputs validated against a Zod schema, behind a provider interface. Timeouts, input caps, a rolling 24-hour per-user quota stored in the database, and graceful `503` when not configured. Tests use a fake provider. |
-| **Testing** | 80 Vitest tests: unit tests for pure domain logic, and HTTP-level integration tests (`fastify.inject`) against a **real PostgreSQL**, including a cross-user isolation suite and a hand-calculated statistics dataset. |
+| **Testing** | 82 Vitest tests: unit tests for pure domain logic, and HTTP-level integration tests (`fastify.inject`) against a **real PostgreSQL**, including a cross-user isolation suite and a hand-calculated statistics dataset. |
 | **Operations** | Structured pino logs with request ids and secret redaction, `/health` + `/ready`, Zod-validated env config that fails fast, graceful shutdown, multi-stage Docker image, GitHub Actions CI, Render blueprint. |
 
 ## Architecture
@@ -142,6 +142,22 @@ npm run lint && npm run typecheck && npm test
   reference dataset), a rate-limit test, and an OpenAPI completeness check.
 - An injectable clock makes session expiry, reminder due dates and the AI quota window
   deterministic.
+
+### Running against Neon
+
+The repository is linked to a Neon project (`neon.ts` declares its services; `.neon` and the
+pulled credentials in `.env.local` are gitignored). With the [Neon CLI](https://neon.com/docs/reference/cli-quickstart):
+
+```bash
+neon env pull              # writes DATABASE_URL (pooled) and DATABASE_URL_UNPOOLED (direct) to .env.local
+npm run build
+npm run db:migrate:neon    # migrations over the direct connection
+npm run start:neon         # API (and dashboard, if WEB_DIST_DIR is set) on the pooled connection
+```
+
+The `pg` driver is configured for Neon's URLs: `channel_binding=require` is honoured
+(SCRAM-SHA-256-PLUS) and `sslmode=require` is pinned to `verify-full` so certificate checks
+survive the driver's next major version.
 
 ## Deployment (Render + Neon, free tiers)
 

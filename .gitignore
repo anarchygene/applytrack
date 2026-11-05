@@ -29,3 +29,4 @@ npm-debug.log*
 # Playwright
 playwright-report/
 test-results/
+.neon
