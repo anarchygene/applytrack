@@ -1,0 +1,26 @@
+# Render Blueprint: one Docker web service that serves both the API and the built dashboard.
+# The database is Neon PostgreSQL; paste its pooled connection string (with ?sslmode=require)
+# into DATABASE_URL when Render prompts for it.
+services:
+  - type: web
+    name: applytrack
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: MIGRATE_ON_START
+        value: 'true'
+      - key: LOG_LEVEL
+        value: info
+      # Optional: set to enable AI resume tailoring.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-5-5
+      - key: AI_ALLOW_DEMO
+        value: 'false'

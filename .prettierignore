@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+coverage/
+package-lock.json
+apps/api/drizzle/
+apps/api/openapi.json
+apps/web/src/api/schema.d.ts
+.specify/
+.claude/
+specs/

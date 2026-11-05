@@ -54,7 +54,7 @@ Index: `sessions_user_idx (user_id)`.
 | job_description | text null | ≤ 20,000 chars |
 | notes | text null | ≤ 10,000 chars |
 | stage | stage | default `wishlist` |
-| applied_on | date null | set on first move to `applied` (FR-023) |
+| applied_on | date null | set on first move to a submitted stage (FR-023) |
 | created_at / updated_at | timestamptz | |
 
 Indexes: `(user_id, created_at DESC)`, `(user_id, stage)`.
@@ -119,13 +119,16 @@ Index: `(user_id, created_at)` for the rolling daily limit.
 Side effects of a stage change, in one transaction:
 
 1. Insert a `stage_events` row.
-2. If `to_stage = applied` and `applied_on IS NULL`: set `applied_on` to the event date in the
-   user's time zone, and insert an auto reminder "Follow up on application" due `applied_on + 7`.
+2. If `applied_on IS NULL` and `to_stage` is a submitted stage (`applied`, `screening`,
+   `interviewing`, `offer`, `accepted`, `rejected`): set `applied_on` to the event date in the
+   user's time zone. If additionally `to_stage = applied`, insert an auto reminder
+   "Follow up on application" due `applied_on + 7`. Reopening (closed → `applied`) never creates
+   one because `applied_on` is already set.
 3. Update `applications.stage` and `updated_at`.
 
 Creating an application inserts a creation event (`from_stage = null`). If it is created directly in
-a stage past `wishlist`, the same `applied_on`/auto-reminder rule applies, using the supplied
-`appliedOn` if given.
+a submitted stage, the same `applied_on`/auto-reminder rule applies, using the supplied `appliedOn`
+if given. List responses omit `jobDescription` and `notes` to keep pages small.
 
 ## Statistics definitions (FR-040 – FR-042)
 

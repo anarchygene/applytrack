@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, type-check, test, build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: applytrack
+          POSTGRES_PASSWORD: applytrack
+          POSTGRES_DB: applytrack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U applytrack"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgres://applytrack:applytrack@localhost:5432/applytrack_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: OpenAPI contract is committed and up to date
+        run: |
+          npm run openapi
+          git diff --exit-code -- apps/api/openapi.json apps/web/src/api/schema.d.ts
+      - run: npm run build
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t applytrack:ci .

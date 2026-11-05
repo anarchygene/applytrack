@@ -62,8 +62,9 @@ the timeline lists three entries in order with dates, and that a disallowed move
 2. **Given** an application in a closed stage (Accepted, Rejected, Withdrawn), **When** the user
    tries to move it to "Screening", **Then** the change is refused with a clear reason, unless they
    explicitly reopen it to "Applied".
-3. **Given** an application moved to "Applied" for the first time, **Then** its applied date is set
-   to the date of that move (unless the user supplied one).
+3. **Given** an application moved to "Applied" (or straight to a later stage such as "Screening")
+   for the first time, **Then** its applied date is set to the date of that move (unless the user
+   supplied one).
 
 ---
 
@@ -196,7 +197,8 @@ response and that every other feature still works.
   it as the application's timeline.
 - **FR-022**: System MUST refuse moves out of a closed stage (Accepted, Rejected, Withdrawn) except
   reopening to Applied.
-- **FR-023**: System MUST set the applied date on the first move to Applied when none is set.
+- **FR-023**: System MUST set the applied date the first time an application reaches Applied or
+  any later submitted stage (Screening, Interviewing, Offer, Accepted, Rejected) when none is set.
 
 **Reminders**
 

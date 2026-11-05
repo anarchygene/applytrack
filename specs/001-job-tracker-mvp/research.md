@@ -66,14 +66,17 @@ on 2026-11-05.
 - **Decision**: Anthropic Claude via `@anthropic-ai/sdk`, behind a `TailoringProvider` interface with
   two implementations: `ClaudeTailoringProvider` and `FakeTailoringProvider` (tests). Enabled only
   when `ANTHROPIC_API_KEY` is set; model configurable with `ANTHROPIC_MODEL` (default
-  `claude-haiku-5-5` for cost). Structured output is obtained with a single forced tool call whose
-  input schema is the suggestion shape, then validated with Zod. Timeout 30 s, max 2 retries handled
-  by the SDK; resume and job description are each capped at 20,000 characters; `max_tokens` capped.
-- **Rationale**: Constitution VI. A forced tool call yields schema-shaped JSON reliably; Zod
-  validation guards against malformed output. Haiku keeps the per-request cost to a fraction of a
-  cent for a demo deployment.
-- **Errors**: Not configured → `503 ai_unavailable`. Provider error/timeout → `502 ai_provider_error`
-  (not counted against the limit). Limit hit → `429 ai_daily_limit` with `Retry-After`.
+  `claude-opus-5-5`; operators can choose `claude-haiku-5-5` to cut cost). Structured output uses
+  `client.beta.messages.parse` with `betaZodOutputFormat`, so the response is validated against the
+  same Zod schema; the output is then normalised (trimmed, length-capped, de-duplicated). On models
+  that support it, the server-side refusal fallback (`fallbacks: "default"`) is enabled. Effort is
+  set explicitly to `medium`. Timeout 60 s with the SDK's 2 retries; resume and job description are
+  each capped at 20,000 characters; the prompt treats both as untrusted text.
+- **Rationale**: Constitution VI. Forced tool calls are rejected by current Claude models, and
+  structured outputs give schema-valid JSON directly.
+- **Errors**: Not configured → `503 ai_unavailable`. Provider error/timeout/refusal →
+  `502 ai_provider_error` (not counted against the limit). Limit hit → `429 ai_daily_limit` with
+  `Retry-After`.
 
 ## R7. Frontend and deployment shape
 
