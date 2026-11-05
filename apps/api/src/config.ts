@@ -13,6 +13,11 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  /** Direct (non-pooled) connection for migrations, e.g. Neon's URL without `-pooler`. */
+  DATABASE_URL_UNPOOLED: z.preprocess(
+    emptyToUndefined,
+    z.url({ protocol: /^postgres(ql)?$/ }).optional(),
+  ),
   COOKIE_SECURE: booleanString,
   ANTHROPIC_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   ANTHROPIC_MODEL: z.preprocess(emptyToUndefined, z.string().default('claude-opus-5-5')),

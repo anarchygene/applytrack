@@ -118,6 +118,7 @@ http://localhost:4000/docs. To enable AI tailoring, set `ANTHROPIC_API_KEY` in `
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | – (required) | PostgreSQL connection string (`?sslmode=require` for Neon) |
+| `DATABASE_URL_UNPOOLED` | falls back to `DATABASE_URL` | Direct connection used only for migrations (Neon's non-`-pooler` URL) |
 | `PORT` / `HOST` | `4000` in `.env.example` (`3000` in Docker) / `0.0.0.0` | Listen address |
 | `LOG_LEVEL` | `info` | pino level, or `silent` |
 | `COOKIE_SECURE` | `false` (`true` in Docker) | Send the session cookie over HTTPS only |
@@ -144,11 +145,14 @@ npm run lint && npm run typecheck && npm test
 
 ## Deployment (Render + Neon, free tiers)
 
-1. Create a Neon project and copy its **pooled** connection string.
+1. Create a Neon project and copy two connection strings from **Connect**: the **pooled** one
+   (hostname contains `-pooler`) and the **direct** one (pooling toggled off).
 2. In Render, choose **New → Blueprint** and select this repository. `render.yaml` defines one
    Docker web service.
-3. When prompted, paste the Neon URL into `DATABASE_URL` (optionally also `ANTHROPIC_API_KEY`).
-   Migrations run on start (`MIGRATE_ON_START=true`).
+3. When prompted, paste the pooled URL into `DATABASE_URL` and the direct URL into
+   `DATABASE_URL_UNPOOLED` (optionally also `ANTHROPIC_API_KEY`). Migrations run on start
+   (`MIGRATE_ON_START=true`) over the direct connection, as Neon recommends, while the app's
+   queries use the pooler.
 4. Check `https://<service>.onrender.com/health`, then try the demo.
 
 The dashboard is served by the API from the same origin, so cookies stay first-party. This avoids

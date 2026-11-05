@@ -6,7 +6,11 @@ import { startDemoCleanup } from './jobs/demo-cleanup.js';
 import { ClaudeTailoringProvider } from './modules/tailoring/provider.js';
 
 const config = loadConfig();
-if (config.MIGRATE_ON_START) await runMigrations(config.DATABASE_URL);
+// Migrations go over the direct connection when one is given: PgBouncer's transaction pooling
+// does not support the session state some migration statements rely on.
+if (config.MIGRATE_ON_START) {
+  await runMigrations(config.DATABASE_URL_UNPOOLED ?? config.DATABASE_URL);
+}
 const { db, pool } = createDatabase(config.DATABASE_URL);
 const tailoring = config.ANTHROPIC_API_KEY
   ? new ClaudeTailoringProvider(config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL)

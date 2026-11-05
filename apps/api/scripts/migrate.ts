@@ -1,6 +1,6 @@
 import { runMigrations } from '../src/db/migrate.js';
 
-const url = process.env.DATABASE_URL;
+const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) {
   console.error('DATABASE_URL is not set');
   process.exit(1);
