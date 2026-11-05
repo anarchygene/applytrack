@@ -235,11 +235,14 @@ response and that every other feature still works.
 - **FR-063**: The web dashboard MUST provide sign-up/sign-in, an application list with search and
   filters, a stage board, an application detail page with timeline and reminders, a reminders
   page, a stats page, and (when available) AI tailoring.
+- **FR-064**: Visitors MUST be able to start a private, temporary demo account pre-filled with
+  realistic sample data in one click; demo accounts and their data MUST be removed automatically
+  after 24 hours.
 
 ### Key Entities
 
 - **User**: An account holder. Email (unique, case-insensitive), display name, password secret,
-  time zone, base resume text, created date.
+  time zone, base resume text, whether it is a temporary demo account, created date.
 - **Session**: A signed-in session belonging to a user, with expiry; revoked on sign-out.
 - **Application**: A job opportunity owned by one user. Company, role, posting URL, location, work
   arrangement, salary min/max/currency, source, job description, notes, current stage, applied
