@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigserial,
   boolean,
   char,
   check,
@@ -119,8 +120,10 @@ export const stageEvents = pgTable(
     toStage: stageEnum('to_stage').notNull(),
     note: text('note'),
     occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Insertion order; breaks ties between events with the same `occurred_at`. */
+    seq: bigserial('seq', { mode: 'number' }).notNull(),
   },
-  (t) => [index('stage_events_application_idx').on(t.applicationId, t.occurredAt)],
+  (t) => [index('stage_events_application_idx').on(t.applicationId, t.occurredAt, t.seq)],
 );
 
 export const reminders = pgTable(

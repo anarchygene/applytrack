@@ -151,6 +151,19 @@ export async function changeStage(
     const transition = checkTransition(app.stage, input.stage);
     if (!transition.ok) throw new AppError(transition.code, transition.reason);
 
+    // Keep the timeline chronological so from→to chains and "first response" dates agree.
+    const previousAt = await repo.latestStageEventAt(tx, app.id);
+    if (previousAt && occurredAt < previousAt) {
+      throw new AppError('validation_failed', 'Request validation failed', {
+        errors: [
+          {
+            path: 'body.occurredAt',
+            message: `Cannot be earlier than the previous stage change (${previousAt.toISOString()})`,
+          },
+        ],
+      });
+    }
+
     await repo.insertStageEvent(tx, {
       applicationId: app.id,
       fromStage: app.stage,

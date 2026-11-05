@@ -28,7 +28,7 @@ data model, API contract and task list are all in [`specs/`](specs/001-job-track
 | **Data & SQL** | PostgreSQL with Drizzle ORM, versioned migrations, check constraints and composite indexes. Statistics use one CTE with `GROUP BY ROLLUP` for overall plus per-source funnels, and `generate_series` for zero-filled weekly counts. |
 | **Domain logic** | Stage-transition rules, applied-date stamping in the user's time zone, and transactional stage changes that write the timeline event, update the application and create the automatic follow-up atomically. |
 | **Optional AI** | Claude structured outputs validated against a Zod schema, behind a provider interface. Timeouts, input caps, a rolling 24-hour per-user quota stored in the database, and graceful `503` when not configured. Tests use a fake provider. |
-| **Testing** | 100+ Vitest tests: unit tests for pure domain logic, and HTTP-level integration tests (`fastify.inject`) against a **real PostgreSQL**, including a cross-user isolation suite and a hand-calculated statistics dataset. |
+| **Testing** | 80 Vitest tests: unit tests for pure domain logic, and HTTP-level integration tests (`fastify.inject`) against a **real PostgreSQL**, including a cross-user isolation suite and a hand-calculated statistics dataset. |
 | **Operations** | Structured pino logs with request ids and secret redaction, `/health` + `/ready`, Zod-validated env config that fails fast, graceful shutdown, multi-stage Docker image, GitHub Actions CI, Render blueprint. |
 
 ## Architecture
@@ -94,8 +94,8 @@ The full interactive reference is served at **`/docs`** (Scalar), generated from
 
 ```bash
 # Example: start a demo session and query it with the returned bearer token
-TOKEN=$(curl -s -X POST localhost:3000/v1/auth/demo | jq -r .token)
-curl -s localhost:3000/v1/stats -H "Authorization: Bearer $TOKEN" | jq '.responseRate, .bySource'
+TOKEN=$(curl -s -X POST localhost:4000/v1/auth/demo | jq -r .token)
+curl -s localhost:4000/v1/stats -H "Authorization: Bearer $TOKEN" | jq '.responseRate, .bySource'
 ```
 
 ## Running locally
@@ -107,18 +107,18 @@ npm install
 cp apps/api/.env.example apps/api/.env
 docker compose up -d db          # PostgreSQL 17 on localhost:5433 (dev + test databases)
 npm run db:migrate
-npm run dev                      # API on :3000, dashboard on :5173 (proxied, same origin)
+npm run dev                      # API on :4000, dashboard on :5173 (proxied, same origin)
 ```
 
 Open http://localhost:5173 and click **Try the demo**, or browse the API at
-http://localhost:3000/docs. To enable AI tailoring, set `ANTHROPIC_API_KEY` in `apps/api/.env`.
+http://localhost:4000/docs. To enable AI tailoring, set `ANTHROPIC_API_KEY` in `apps/api/.env`.
 
 ### Configuration
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | – (required) | PostgreSQL connection string (`?sslmode=require` for Neon) |
-| `PORT` / `HOST` | `3000` / `0.0.0.0` | Listen address |
+| `PORT` / `HOST` | `4000` in `.env.example` (`3000` in Docker) / `0.0.0.0` | Listen address |
 | `LOG_LEVEL` | `info` | pino level, or `silent` |
 | `COOKIE_SECURE` | `false` (`true` in Docker) | Send the session cookie over HTTPS only |
 | `MIGRATE_ON_START` | `false` | Apply migrations before listening |

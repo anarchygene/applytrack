@@ -12,7 +12,7 @@ npm install
 cp apps/api/.env.example apps/api/.env      # adjust if not using docker compose
 docker compose up -d db                     # Postgres on localhost:5433 (dev + test databases)
 npm run db:migrate                          # apply migrations to the dev database
-npm run dev                                 # API on :3000, web on :5173 (proxied to the API)
+npm run dev                                 # API on :4000, web on :5173 (proxied to the API)
 ```
 
 Optional: set `ANTHROPIC_API_KEY` in `apps/api/.env` to enable AI tailoring.
@@ -42,7 +42,7 @@ Expected: all suites pass; integration tests run against the `applytrack_test` d
 2. Board view: move a Wishlist card to Applied → a follow-up reminder due in 7 days appears on the
    Reminders page.
 3. Stats page shows per-stage counts, weekly chart and response rate.
-4. Open http://localhost:3000/docs → every endpoint is listed; "Try it" on `GET /v1/me` works with
+4. Open http://localhost:4000/docs → every endpoint is listed; "Try it" on `GET /v1/me` works with
    the browser session.
 5. Sign out → refreshing any page returns to sign-in.
 

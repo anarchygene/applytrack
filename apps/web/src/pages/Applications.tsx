@@ -31,6 +31,12 @@ const SORTS: Record<Sort, string> = {
   company: 'Company A–Z',
 };
 
+/** "Singapore · Hybrid", without repeating e.g. "Remote · Remote". */
+function whereLabel(location: string | null, mode: string | null): string {
+  if (location && mode && location.toLowerCase().startsWith(mode.toLowerCase())) return location;
+  return [location, mode].filter(Boolean).join(' · ') || '—';
+}
+
 export function ApplicationsPage() {
   const [params, setParams] = useSearchParams();
   const [creating, setCreating] = useState(false);
@@ -173,7 +179,7 @@ export function ApplicationsPage() {
                   </td>
                   <td className="px-4 py-3"><StageBadge stage={app.stage} /></td>
                   <td className="hidden px-4 py-3 text-slate-600 md:table-cell">
-                    {[app.location, app.workMode && WORK_MODE_LABEL[app.workMode]].filter(Boolean).join(' · ') || '—'}
+                    {whereLabel(app.location, app.workMode ? WORK_MODE_LABEL[app.workMode] : null)}
                   </td>
                   <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">{formatDate(app.appliedOn)}</td>
                   <td className="hidden px-4 py-3 text-slate-600 lg:table-cell">{formatDate(app.updatedAt)}</td>

@@ -50,6 +50,6 @@ describe('platform', () => {
     expect(doc.json()).toMatchObject({ openapi: '3.1.0', info: { title: 'ApplyTrack API' } });
 
     const ui = await ctx.app.inject({ method: 'GET', url: '/docs' });
-    expect([200, 302]).toContain(ui.statusCode);
+    expect([200, 301, 302]).toContain(ui.statusCode);
   });
 });

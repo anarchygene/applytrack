@@ -10,7 +10,9 @@ describe('hiring pipeline', () => {
 
   it('records each stage change in an ordered timeline', async () => {
     const user = await registerUser(ctx.app);
+    ctx.clock.now = new Date('2026-10-30T00:00:00Z');
     const app = await createApplication(ctx.app, user);
+    ctx.clock.now = new Date('2026-11-05T18:00:00Z');
 
     await move(user, app.id, { stage: 'applied', occurredAt: '2026-11-01T01:00:00Z' });
     await move(user, app.id, { stage: 'screening', note: 'Recruiter call booked' });
@@ -54,10 +56,7 @@ describe('hiring pipeline', () => {
     expect(applied.body.appliedOn).toBe('2026-11-06');
 
     await move(user, app.id, { stage: 'withdrawn' });
-    const reopened = await move(user, app.id, {
-      stage: 'applied',
-      occurredAt: '2026-11-05T12:00:00Z',
-    });
+    const reopened = await move(user, app.id, { stage: 'applied' });
     expect(reopened.body.appliedOn).toBe('2026-11-06');
   });
 
@@ -92,5 +91,19 @@ describe('hiring pipeline', () => {
     });
     expect(future.status).toBe(400);
     expect(future.body.errors[0].path).toBe('body.occurredAt');
+  });
+
+  it('refuses back-dating a change to before the previous one', async () => {
+    const user = await registerUser(ctx.app);
+    const app = await createApplication(ctx.app, user); // created at 2026-11-05T18:00Z
+    const res = await move(user, app.id, { stage: 'applied', occurredAt: '2026-11-01T00:00:00Z' });
+    expect(res.status).toBe(400);
+    expect(res.body.errors[0]).toMatchObject({
+      path: 'body.occurredAt',
+      message: expect.stringContaining('previous stage change'),
+    });
+    expect((await call(ctx.app, user, 'GET', `/v1/applications/${app.id}`)).body.stage).toBe(
+      'wishlist',
+    );
   });
 });

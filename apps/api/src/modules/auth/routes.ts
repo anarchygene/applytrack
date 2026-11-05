@@ -30,7 +30,8 @@ const timezone = z
   .max(64)
   .refine(isValidTimeZone, 'Must be an IANA time zone such as Asia/Singapore');
 
-const email = z.email().max(254);
+// Trim before validating so pasted addresses with stray spaces are accepted.
+const email = z.string().trim().pipe(z.email().max(254));
 const password = z.string().min(10, 'Must be at least 10 characters').max(200);
 const name = z.string().trim().min(1).max(100);
 

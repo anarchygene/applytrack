@@ -53,8 +53,9 @@ export async function funnel(db: DbOrTx, userId: string, timezone: string): Prom
       count(*)::int AS submitted,
       count(first_response_at)::int AS responded,
       (count(*) FILTER (WHERE got_offer))::int AS offers,
-      avg(GREATEST(0, (first_response_at AT TIME ZONE ${timezone})::date - applied_on))::float8
-        AS avg_days
+      -- FILTER matters: GREATEST(0, NULL) is 0, which would count non-responses as 0 days.
+      (avg(GREATEST(0, (first_response_at AT TIME ZONE ${timezone})::date - applied_on))
+        FILTER (WHERE first_response_at IS NOT NULL))::float8 AS avg_days
     FROM submitted
     GROUP BY ROLLUP (source)
   `);

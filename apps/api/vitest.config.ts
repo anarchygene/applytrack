@@ -1,5 +1,12 @@
 import { defineConfig } from 'vitest/config';
 
+// Local overrides such as TEST_DATABASE_URL live in apps/api/.env (CI sets them directly).
+try {
+  process.loadEnvFile('.env');
+} catch {
+  // No .env file: fall back to the defaults (docker compose on port 5433).
+}
+
 export default defineConfig({
   test: {
     projects: [

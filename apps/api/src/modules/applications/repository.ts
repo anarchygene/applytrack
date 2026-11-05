@@ -7,6 +7,7 @@ import {
   getTableColumns,
   ilike,
   inArray,
+  max,
   or,
   sql,
   type SQL,
@@ -117,10 +118,18 @@ export async function insertStageEvent(db: DbOrTx, values: typeof stageEvents.$i
   return row!;
 }
 
+export async function latestStageEventAt(db: DbOrTx, applicationId: string): Promise<Date | null> {
+  const [row] = await db
+    .select({ at: max(stageEvents.occurredAt) })
+    .from(stageEvents)
+    .where(eq(stageEvents.applicationId, applicationId));
+  return row?.at ?? null;
+}
+
 export async function listStageEvents(db: DbOrTx, applicationId: string) {
   return db
     .select()
     .from(stageEvents)
     .where(eq(stageEvents.applicationId, applicationId))
-    .orderBy(asc(stageEvents.occurredAt), asc(stageEvents.id));
+    .orderBy(asc(stageEvents.occurredAt), asc(stageEvents.seq));
 }

@@ -69,9 +69,11 @@ Check constraint: `salary_min IS NULL OR salary_max IS NULL OR salary_min <= sal
 | from_stage | stage null | null for the creation event |
 | to_stage | stage | |
 | note | text null | ≤ 1,000 chars |
-| occurred_at | timestamptz | defaults to now; may be back-dated, not in the future |
+| occurred_at | timestamptz | defaults to now; may be back-dated, but not into the future and not before the application's previous event (keeps the timeline chronological) |
 
-Index: `(application_id, occurred_at)`.
+| seq | bigserial | insertion order; tie-breaker when two events share `occurred_at` |
+
+Index: `(application_id, occurred_at, seq)`. The timeline is ordered by `occurred_at`, then `seq`.
 
 ## reminders
 
